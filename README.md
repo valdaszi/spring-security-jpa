@@ -30,7 +30,8 @@ These additional references should also help you:
     
     Joje reikia realizuoti tik vieną metodą __loadUserByUsername__, kuris turi grąžinti __UserDetails__
     objektą pagal __username__ parametrą. Paprastai ieškome DB _user_ lentelėje įrašo pagal pateiktą
-    __username__ ir formuojame objektą arba tiesiai iš interfeiso __UserDetails__ arba grąžiname klasės,
+    __username__ ir formuojame objektą arba tiesiai iš interfeiso __UserDetails__ 
+    arba grąžiname klasės (pvz __AppUserDetail__),
     kuri šį interfeisą implementuoja, objektą. 
     
 - __Aprašome _PasswordEncoder_ _@Bean_.__
@@ -44,4 +45,8 @@ These additional references should also help you:
 
 - Klasėje __SecurityConfig__ metode __configure(HttpSecurity http)__ nurodyta, kad pagrindinis puslapis (__"/"__)
     būtų prieinamas visiems ir taip pat kad reikalingi __login__ ir __logout__ langai. 
+    
+- Parodyta kaip __/any__ užklausos metu galima keliais būdais gauti prisijungusio userio vardą ir daugiau info apie userį
+    (pažiūrėkit __Ctrl__ klasės __String any(...)__ metodą) 
+    [Daugiau info ...](https://www.baeldung.com/get-user-in-spring-security)
 

@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +22,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -75,45 +77,59 @@ class AppUserDetailService implements UserDetailsService {
         User user = userRepository.findByUsername(username);
         if (user == null) throw new UsernameNotFoundException("Sorry no :)");
 
-        return new UserDetails() {
-            @Override
-            public Collection<? extends GrantedAuthority> getAuthorities() {
-                return Arrays.asList(new SimpleGrantedAuthority(user.getRole()));
-            }
-
-            @Override
-            public String getPassword() {
-                return user.getSecret();
-            }
-
-            @Override
-            public String getUsername() {
-                return user.getUsername();
-            }
-
-            @Override
-            public boolean isAccountNonExpired() {
-                return true;
-            }
-
-            @Override
-            public boolean isAccountNonLocked() {
-                return true;
-            }
-
-            @Override
-            public boolean isCredentialsNonExpired() {
-                return true;
-            }
-
-            @Override
-            public boolean isEnabled() {
-                return true;
-            }
-        };
+        return new AppUserDetail(user);
     }
 }
 
+
+class AppUserDetail implements UserDetails {
+
+    private User user;
+
+    AppUserDetail(User user) {
+        this.user = user;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Arrays.asList(new SimpleGrantedAuthority(user.getRole()));
+    }
+
+    @Override
+    public String getPassword() {
+        return user.getSecret();
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUsername();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    public int getId() {
+        return user.getId();
+    }
+
+}
 
 interface UserRepository extends PagingAndSortingRepository<User, Integer> {
 
@@ -147,7 +163,13 @@ class Ctrl {
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/any")
-    public String any() {
+    public String any(Model model, Principal principal, Authentication authentication) {
+        model.addAttribute("principal", principal);
+        model.addAttribute("authentication", authentication);
+
+        AppUserDetail userDetail = (AppUserDetail) authentication.getPrincipal();
+        model.addAttribute("userDetail", userDetail);
+
         return "any";
     }
 }
