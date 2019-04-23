@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,13 +24,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 @SpringBootApplication
 public class SprngSecJpaApplication {
@@ -46,12 +49,15 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(16);
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+                // disabiname csrf
+                .csrf().disable()
+
                 .authorizeRequests()
                 .antMatchers("/").permitAll()
 
@@ -171,6 +177,53 @@ class Ctrl {
         model.addAttribute("userDetail", userDetail);
 
         return "any";
+    }
+
+    @PreAuthorize("permitAll()")
+    @RequestMapping(path = "/open", method = {RequestMethod.GET, RequestMethod.PUT})
+    public String open() {
+        return "open";
+    }
+
+
+
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping("/create")
+    @ResponseBody
+    public Map createUser(@RequestBody UserRequest userRequest) {
+        User user = new User();
+        user.setUsername(userRequest.getUsername());
+        user.setSecret(passwordEncoder.encode(userRequest.getPassword()));
+        userRepository.save(user);
+        return Collections.singletonMap("id", user.getId());
+    }
+}
+
+class UserRequest {
+    private String username;
+    private String password;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
 
