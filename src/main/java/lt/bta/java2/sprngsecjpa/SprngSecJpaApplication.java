@@ -1,6 +1,6 @@
 package lt.bta.java2.sprngsecjpa;
 
-import com.sun.security.auth.UserPrincipal;
+import lombok.Data;
 import lt.bta.java2.sprngsecjpa.entities.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -8,14 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -29,8 +26,6 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -83,65 +78,15 @@ class AppUserDetailService implements UserDetailsService {
         User user = userRepository.findByUsername(username);
         if (user == null) throw new UsernameNotFoundException("Sorry no :)");
 
-        return new AppUserDetail(user);
+        return user;
     }
 }
 
-
-class AppUserDetail implements UserDetails {
-
-    private User user;
-
-    AppUserDetail(User user) {
-        this.user = user;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Arrays.asList(new SimpleGrantedAuthority(user.getRole()));
-    }
-
-    @Override
-    public String getPassword() {
-        return user.getSecret();
-    }
-
-    @Override
-    public String getUsername() {
-        return user.getUsername();
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
-    public int getId() {
-        return user.getId();
-    }
-
-}
 
 interface UserRepository extends PagingAndSortingRepository<User, Integer> {
-
     User findByUsername(String username);
-
 }
+
 
 @Configuration
 class MVCConfig implements WebMvcConfigurer {
@@ -172,19 +117,28 @@ class Ctrl {
     public String any(Model model, Principal principal, Authentication authentication) {
         model.addAttribute("principal", principal);
         model.addAttribute("authentication", authentication);
-
-        AppUserDetail userDetail = (AppUserDetail) authentication.getPrincipal();
-        model.addAttribute("userDetail", userDetail);
-
+        model.addAttribute("userDetail", authentication.getPrincipal());
         return "any";
     }
 
     @PreAuthorize("permitAll()")
     @RequestMapping(path = "/open", method = {RequestMethod.GET, RequestMethod.PUT})
-    public String open() {
+    public String open(Principal principal) {
+        //UserDetails appUserDetail = (UserDetails) principal;
+        Object cart = getCart(principal);
+        System.out.println(principal);
         return "open";
     }
 
+
+    private Object getCart(Principal principal) {
+        if (principal instanceof UserDetails) {
+            //TODO kai useris prisilogines
+        } else {
+            //TODO kai ne
+        }
+        return null;
+    }
 
 
 
@@ -200,31 +154,16 @@ class Ctrl {
     public Map createUser(@RequestBody UserRequest userRequest) {
         User user = new User();
         user.setUsername(userRequest.getUsername());
-        user.setSecret(passwordEncoder.encode(userRequest.getPassword()));
+        user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         userRepository.save(user);
         return Collections.singletonMap("id", user.getId());
     }
 }
 
+@Data
 class UserRequest {
     private String username;
     private String password;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 }
 
 

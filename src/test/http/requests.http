@@ -12,7 +12,7 @@ Accept: application/json
 
 GET http://localhost:8080/any
 Accept: application/json
-Cookie: JSESSIONID=3A2FA3AA2BA3AB3539646447132B6323
+Cookie: JSESSIONID=0287CA923F5F4E5B23FEE9D3D3F0AC45
 
 ###
 
@@ -26,7 +26,7 @@ username=admin&password=admin
 POST http://localhost:8080/create
 Accept: application/json
 Content-Type: application/json
-Cookie: JSESSIONID=3A2FA3AA2BA3AB3539646447132B6323
+Cookie: JSESSIONID=0287CA923F5F4E5B23FEE9D3D3F0AC45
 
 {"username": "petras", "password": "123"}
 
