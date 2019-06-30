@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Map;
@@ -38,13 +40,13 @@ public class SprngSecJpaApplication {
 
 }
 
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableGlobalMethodSecurity(jsr250Enabled = true, prePostEnabled = true)
 @Configuration
 class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(16);
+        return new BCryptPasswordEncoder(10);
     }
 
     @Override
@@ -54,7 +56,8 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
 
                 .authorizeRequests()
-                .antMatchers("/").permitAll()
+                .antMatchers("/login").permitAll()
+                .antMatchers("/logout").permitAll()
 
                 .and()
                 .formLogin()
@@ -100,13 +103,13 @@ class MVCConfig implements WebMvcConfigurer {
 @Controller
 class Ctrl {
 
-    @PreAuthorize("hasAuthority('USER') OR hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('A') OR hasAuthority('B')")
     @GetMapping("/user")
     public String user() {
         return "user";
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin")
     public String admin() {
         return "admin";
@@ -121,7 +124,7 @@ class Ctrl {
         return "any";
     }
 
-    @PreAuthorize("permitAll()")
+    @PermitAll
     @RequestMapping(path = "/open", method = {RequestMethod.GET, RequestMethod.PUT})
     public String open(Principal principal) {
         //UserDetails appUserDetail = (UserDetails) principal;
@@ -148,13 +151,14 @@ class Ctrl {
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @RolesAllowed("ADMIN")
     @PostMapping("/create")
     @ResponseBody
     public Map createUser(@RequestBody UserRequest userRequest) {
         User user = new User();
         user.setUsername(userRequest.getUsername());
         user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+        user.setRole("ROLE_USER");
         userRepository.save(user);
         return Collections.singletonMap("id", user.getId());
     }
